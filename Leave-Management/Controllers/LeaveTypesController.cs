@@ -85,7 +85,7 @@ namespace Leave_Management.Controllers
                 return NotFound();
             }
             var leaveType = _repo.FindById(id);
-            var model = _mapper.Map<LeaveType>(leaveType);
+            var model = _mapper.Map<LeaveTypeVM>(leaveType);
             return View(model);
         }
 
