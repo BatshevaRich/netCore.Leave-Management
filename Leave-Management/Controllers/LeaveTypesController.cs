@@ -27,7 +27,7 @@ namespace Leave_Management.Controllers
         public ActionResult Index()
         {
             var leaveTypes = _repo.FindAll().ToList();
-            var model = _mapper.Map<List<LeaveType>, List<DetailsLeaveTypeVM>>(leaveTypes);
+            var model = _mapper.Map<List<LeaveType>, List<LeaveTypeVM>>(leaveTypes);
             return View(model);
         }
 
