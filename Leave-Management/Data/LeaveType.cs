@@ -12,7 +12,6 @@ namespace Leave_Management.Data
         public int Id { get; set; }
         [Required]
         public string Name { get; set; }
-        public int NumberOfDays { get; set; }
         public DateTime? DateCreated { get; set; }
     }
 }
