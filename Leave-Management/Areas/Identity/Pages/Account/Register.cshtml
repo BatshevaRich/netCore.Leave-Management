@@ -1,79 +1,132 @@
-﻿@page
-@model RegisterModel
-@{
-    ViewData["Title"] = "Register";
-}
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Threading.Tasks;
+using leave_management.Data;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Logging;
 
-<h1>@ViewData["Title"]</h1>
+namespace leave_management.Areas.Identity.Pages.Account
+{
+    [AllowAnonymous]
+    public class RegisterModel : PageModel
+    {
+        private readonly SignInManager<Employee>
+    _signInManager;
+    private readonly UserManager<Employee>
+        _userManager;
+        private readonly ILogger<RegisterModel>
+            _logger;
+            private readonly IEmailSender _emailSender;
 
-<div class="row">
-    <div class="col-md-10">
-        <form asp-route-returnUrl="@Model.ReturnUrl" method="post">
-            <h4>Create a new account.</h4>
-            <hr />
-            <div asp-validation-summary="All" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Input.FirstName"></label>
-                <input asp-for="Input.FirstName" class="form-control" />
-                <span asp-validation-for="Input.FirstName" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Input.LastName"></label>
-                <input asp-for="Input.LastName" class="form-control" />
-                <span asp-validation-for="Input.LastName" class="text-danger"></span>
-            </div>
+            public RegisterModel(
+            UserManager<Employee>
+                userManager,
+                SignInManager<Employee>
+                    signInManager,
+                    ILogger<RegisterModel>
+                        logger,
+                        IEmailSender emailSender)
+                        {
+                        _userManager = userManager;
+                        _signInManager = signInManager;
+                        _logger = logger;
+                        _emailSender = emailSender;
+                        }
 
+                        [BindProperty]
+                        public InputModel Input { get; set; }
 
-            <div class="form-group">
-                <label asp-for="Input.Email"></label>
-                <input asp-for="Input.Email" class="form-control" />
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Input.Password"></label>
-                <input asp-for="Input.Password" class="form-control" />
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Input.ConfirmPassword"></label>
-                <input asp-for="Input.ConfirmPassword" class="form-control" />
-                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block">Register</button>
-        </form>
-    </div>
-    @*<div class="col-md-6 col-md-offset-2">
-        <section>
-            <h4>Use another service to register.</h4>
-            <hr />
-            @{
-                if ((Model.ExternalLogins?.Count ?? 0) == 0)
-                {
-                    <div>
-                        <p>
-                            There are no external authentication services configured. See <a href="https://go.microsoft.com/fwlink/?LinkID=532715">this article</a>
-                            for details on setting up this ASP.NET application to support logging in via external services.
-                        </p>
-                    </div>
-                }
-                else
-                {
-                    <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
-                        <div>
-                            <p>
-                                @foreach (var provider in Model.ExternalLogins)
+                        public string ReturnUrl { get; set; }
+
+                        public IList<AuthenticationScheme>
+                            ExternalLogins { get; set; }
+
+                            public class InputModel
+                            {
+                            [Required]
+                            [EmailAddress]
+                            [Display(Name = "Email Address")]
+                            public string Email { get; set; }
+
+                            [Required]
+                            [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+                            [DataType(DataType.Password)]
+                            [Display(Name = "Password")]
+                            public string Password { get; set; }
+
+                            [DataType(DataType.Password)]
+                            [Display(Name = "Confirm password")]
+                            [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+                            public string ConfirmPassword { get; set; }
+
+                            [Required]
+                            [DataType(DataType.Text)]
+                            [Display(Name = "First Name")]
+                            public string FirstName { get; set; }
+
+                            [Required]
+                            [DataType(DataType.Text)]
+                            [Display(Name = "Last Name")]
+                            public string LastName { get; set; }
+
+                            }
+
+                            public async Task OnGetAsync(string returnUrl = null)
+                            {
+                            ReturnUrl = returnUrl;
+                            ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+                            }
+
+                            public async Task<IActionResult>
+                                OnPostAsync(string returnUrl = null)
                                 {
-                                    <button type="submit" class="btn btn-primary" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">@provider.DisplayName</button>
-                                }
-                            </p>
-                        </div>
-                    </form>
-                }
-            }
-        </section>
-    </div>*@
-</div>
+                                returnUrl = returnUrl ?? Url.Content("~/");
+                                ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+                                if (ModelState.IsValid)
+                                {
+                                var user = new Employee { UserName = Input.Email, Email = Input.Email,
+                                Firstname = Input.FirstName,
+                                Lastname = Input.LastName  };
+                                var result = await _userManager.CreateAsync(user, Input.Password);
+                                if (result.Succeeded)
+                                {
+                                _userManager.AddToRoleAsync(user, "Employee").Wait();
+                                _logger.LogInformation("User created a new account with password.");
 
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
+                                var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
+                                var callbackUrl = Url.Page(
+                                "/Account/ConfirmEmail",
+                                pageHandler: null,
+                                values: new { area = "Identity", userId = user.Id, code = code, returnUrl = returnUrl },
+                                protocol: Request.Scheme);
+
+                                await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
+                                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+
+                                await _signInManager.SignInAsync(user, isPersistent: false);
+                                return LocalRedirect(returnUrl);
+
+                                }
+                                foreach (var error in result.Errors)
+                                {
+                                ModelState.AddModelError(string.Empty, error.Description);
+                                }
+                                }
+
+                                // If we got this far, something failed, redisplay form
+                                return Page();
+                                }
+                                }
+                                }
