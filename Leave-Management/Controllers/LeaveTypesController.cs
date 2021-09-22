@@ -73,21 +73,38 @@ namespace Leave_Management.Controllers
         // GET: LeaveTypesController/Edit/5
         public ActionResult Edit(int id)
         {
-            return View();
+            if (!_repo.IsExists(id))
+            {
+                return NotFound();
+            }
+            var leaveType = _repo.FindById(id);
+            var model = _mapper.Map<LeaveType>(leaveType);
+            return View(model);
         }
 
         // POST: LeaveTypesController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public ActionResult Edit(LeaveTypeVM model)
         {
             try
             {
+                if (!ModelState.IsValid)
+                {
+                    return View(model);
+                }
+                var leaveType = _mapper.Map<LeaveType>(model);
+                var isSuccess = _repo.Update(leaveType);
+                if (!isSuccess)
+                {
+                    ModelState.AddModelError("", "Something Went Wrong...");
+                }
                 return RedirectToAction(nameof(Index));
             }
             catch
             {
-                return View();
+                ModelState.AddModelError("", "Something Went Wrong...");
+                return View(model);
             }
         }
 
